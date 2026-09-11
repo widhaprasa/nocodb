@@ -8,7 +8,8 @@ import type { MetaService } from '~/meta/meta.service';
 import type Column from '~/models/Column';
 import DependencyTracker from '~/models/DependencyTracker';
 import Noco from '~/Noco';
-import { MetaTable } from '~/utils/globals';
+import NocoCache from '~/cache/NocoCache';
+import { CacheGetType, CacheScope, MetaTable } from '~/utils/globals';
 
 /**
  * Tracked-field set of a LastModifiedTime / LastModifiedBy column configured
@@ -31,19 +32,41 @@ export default class LmtTrackedField {
     dependent_type: DependencyTableType.Column,
   };
 
-  /** Tracked column ids of a field-tracking LMT/LMB column. */
+  private static cacheKey(lmtColumnId: string) {
+    return `${CacheScope.LMT_TRACKED_FIELD}:${lmtColumnId}`;
+  }
+
+  /**
+   * The set is read on every query build that touches a tracked column
+   * (select, sort, filter, group-by, aggregation, lookup), so it is cached
+   * per column. Wrapped in an object because an empty set is a normal
+   * result — a bare `[]` is indistinguishable from a cache miss.
+   *
+   * Invalidated by every writer below. A base hard-delete drops the rows
+   * without going through them, but the columns are gone too, so nothing
+   * reads those keys again.
+   */
   static async getTrackedFieldIds(
     context: NcContext,
     lmtColumnId: string,
     ncMeta: MetaService = Noco.ncMeta,
   ): Promise<string[]> {
+    const cached = await NocoCache.get(
+      context,
+      this.cacheKey(lmtColumnId),
+      CacheGetType.TYPE_OBJECT,
+    );
+    if (cached?.ids) return cached.ids;
+
     const rows = await ncMeta.metaList2(
       context.workspace_id,
       context.base_id,
       MetaTable.DEPENDENCY_TRACKER,
       { condition: { ...this.EDGE, dependent_id: lmtColumnId } },
     );
-    return rows.map((row) => row.source_id);
+    const ids = rows.map((row) => row.source_id);
+    await NocoCache.set(context, this.cacheKey(lmtColumnId), { ids });
+    return ids;
   }
 
   /**
@@ -74,6 +97,10 @@ export default class LmtTrackedField {
       col.tracked_field_ids = rows
         .filter((r) => r.dependent_id === col.id)
         .map((r) => r.source_id);
+      // the batched read already holds the complete set for each target
+      await NocoCache.set(context, this.cacheKey(col.id), {
+        ids: col.tracked_field_ids,
+      });
     }
   }
 
@@ -91,6 +118,7 @@ export default class LmtTrackedField {
       { columns: [...new Set(trackedFieldIds)].map((id) => ({ id })) },
       ncMeta,
     );
+    await NocoCache.del(context, this.cacheKey(lmtColumnId));
   }
 
   /** Cleanup when a tracked column is deleted (meta-dependency handler). */
@@ -99,12 +127,25 @@ export default class LmtTrackedField {
     trackedColumnId: string,
     ncMeta: MetaService = Noco.ncMeta,
   ) {
+    // the rows name the LMT/LMB columns whose cached set is about to change —
+    // read them before the delete, there is no way back to them afterwards
+    const affected = await ncMeta.metaList2(
+      context.workspace_id,
+      context.base_id,
+      MetaTable.DEPENDENCY_TRACKER,
+      { condition: { ...this.EDGE, source_id: trackedColumnId } },
+    );
+
     await ncMeta.metaDelete(
       context.workspace_id,
       context.base_id,
       MetaTable.DEPENDENCY_TRACKER,
       { ...this.EDGE, source_id: trackedColumnId },
     );
+
+    for (const dependentId of new Set(affected.map((r) => r.dependent_id))) {
+      await NocoCache.del(context, this.cacheKey(dependentId));
+    }
   }
 
   /** Cleanup when the LMT/LMB column itself is deleted. */
@@ -119,5 +160,6 @@ export default class LmtTrackedField {
       lmtColumnId,
       ncMeta,
     );
+    await NocoCache.del(context, this.cacheKey(lmtColumnId));
   }
 }
