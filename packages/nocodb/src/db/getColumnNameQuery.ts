@@ -78,14 +78,14 @@ export async function getColumnNameQuery({
     return await lmtFieldQueryBuilder({
       baseModel: baseModelSqlv2,
       column,
-      model: await column.getModel(context, ncMeta),
+      model: await column.getModel(ncMeta),
     });
   }
   if (isFieldTrackingLmbCol(column)) {
     return await lmbFieldQueryBuilder({
       baseModel: baseModelSqlv2,
       column,
-      model: await column.getModel(context, ncMeta),
+      model: await column.getModel(ncMeta),
     });
   }
 

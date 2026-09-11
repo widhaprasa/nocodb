@@ -796,7 +796,7 @@ export const lookupOrLtarBuilder =
           // expression, the way the Formula/Rollup cases above do.
           const trackingLmt = isFieldTrackingLmtCol(lookupColumn);
           if (trackingLmt || isFieldTrackingLmbCol(lookupColumn)) {
-            const lookupModel = await lookupColumn.getModel(context);
+            const lookupModel = await lookupColumn.getModel();
             const { builder } = trackingLmt
               ? await lmtFieldQueryBuilder({
                   baseModel: baseModelSqlv2,

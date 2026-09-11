@@ -52,7 +52,7 @@ export async function lmtFieldQueryBuilder({
 }) {
   const context = baseModel.context;
   const refModel = model ?? baseModel.model;
-  const columns = await refModel.getColumns(context);
+  const columns = await refModel.getColumns();
 
   const trackedIds = await LmtTrackedField.getTrackedFieldIds(
     context,

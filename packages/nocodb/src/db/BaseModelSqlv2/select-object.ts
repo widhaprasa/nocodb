@@ -148,7 +148,7 @@ export const selectObject = (baseModel: IBaseModelSqlV2, logger: Logger) => {
                   column,
                   // the column may belong to a related model when reached
                   // through a lookup traversal
-                  model: await column.getModel(baseModel.context),
+                  model: await column.getModel(),
                   tableAlias: alias,
                   validateFormula,
                   aliasToColumn: aliasToColumnBuilder,
@@ -668,7 +668,7 @@ export const selectObject = (baseModel: IBaseModelSqlV2, logger: Logger) => {
               await lmbFieldQueryBuilder({
                 baseModel,
                 column,
-                model: await column.getModel(baseModel.context),
+                model: await column.getModel(),
                 tableAlias: alias,
               })
             ).builder;

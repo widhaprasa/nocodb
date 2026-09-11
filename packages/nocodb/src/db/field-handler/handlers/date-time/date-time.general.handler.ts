@@ -322,7 +322,7 @@ export class DateTimeGeneralHandler extends GenericFieldHandler {
         await lmtFieldQueryBuilder({
           baseModel,
           column,
-          model: await column.getModel(context),
+          model: await column.getModel(),
           tableAlias: alias,
         })
       ).builder;
@@ -359,7 +359,7 @@ export class DateTimeGeneralHandler extends GenericFieldHandler {
             await lmtFieldQueryBuilder({
               baseModel: options.baseModel,
               column,
-              model: await column.getModel(options.context),
+              model: await column.getModel(),
               tableAlias: alias,
             })
           ).builder

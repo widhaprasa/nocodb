@@ -84,7 +84,7 @@ export class UserGeneralHandler extends GenericFieldHandler {
           await lmbFieldQueryBuilder({
             baseModel: options.baseModel,
             column,
-            model: await column.getModel(context),
+            model: await column.getModel(),
             tableAlias: options.alias,
           })
         ).builder
@@ -119,7 +119,7 @@ export class UserGeneralHandler extends GenericFieldHandler {
             await lmbFieldQueryBuilder({
               baseModel: options.baseModel,
               column,
-              model: await column.getModel(context),
+              model: await column.getModel(),
               tableAlias: alias,
             })
           ).builder

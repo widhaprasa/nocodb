@@ -28,7 +28,7 @@ export async function lmbFieldQueryBuilder({
 }) {
   const context = baseModel.context;
   const refModel = model ?? baseModel.model;
-  const columns = await refModel.getColumns(context);
+  const columns = await refModel.getColumns();
 
   const metaColumn = columns.find((c) => c.uidt === UITypes.Meta);
   const trackedIds = (
