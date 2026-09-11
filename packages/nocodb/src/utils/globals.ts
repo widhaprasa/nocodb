@@ -170,6 +170,7 @@ export enum MetaTable {
 }
 
 export const BaseRelatedMetaTables = [
+  MetaTable.COL_LMT_TRACKED_FIELDS,
   MetaTable.CALENDAR_VIEW_COLUMNS,
   MetaTable.CALENDAR_VIEW_RANGE,
   MetaTable.CALENDAR_VIEW,
