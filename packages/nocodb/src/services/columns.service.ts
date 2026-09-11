@@ -3902,6 +3902,8 @@ export class ColumnsService implements IColumnsService {
       user: UserType;
       reuse?: ReusableParams;
       suppressFormulaError?: boolean;
+      /** import only — see validateLmtTrackedFields */
+      allowEmptyLmtTrackedSet?: boolean;
       apiVersion?: T;
       columnWebhookManager?: ColumnWebhookManager;
       operationSource?: OperationSource;
@@ -4428,7 +4430,11 @@ export class ColumnsService implements IColumnsService {
           let columnName: string;
           const columns = await table.getColumns();
 
-          validateLmtTrackedFields(context, { columnBody: colBody, columns });
+          validateLmtTrackedFields(context, {
+            columnBody: colBody,
+            columns,
+            allowEmptyTrackedSet: param.allowEmptyLmtTrackedSet,
+          });
 
           // check if column already exists, then just create a new column in meta
           // else create a new column in meta and db
