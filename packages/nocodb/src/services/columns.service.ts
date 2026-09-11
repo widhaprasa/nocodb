@@ -756,6 +756,59 @@ export class ColumnsService implements IColumnsService {
     });
   }
 
+  /**
+   * Apply an incoming `meta` to the tracked-field set of a LastModifiedTime/By
+   * column, on the paths that replace `meta` wholesale.
+   *
+   * Only a meta that actually carries `fields_mode` is a mode switch. Callers
+   * that emit `meta` without authoring it — the V3 field builder, and through
+   * it the MCP `updateField` / AI `modify-field` tools, which send `meta: {}`
+   * on a plain rename — must leave the set untouched, otherwise the column
+   * silently reverts to aliasing `updated_at` and starts surfacing edits to
+   * fields it was never meant to track.
+   */
+  /**
+   * Meta to persist when a caller replaces `meta` wholesale on a
+   * LastModifiedTime/By column. `fields_mode` is load-bearing — the read paths
+   * route on it — so it survives a replace that doesn't mention it. Without
+   * this a V3/MCP rename (whose builder emits `meta: {}`) silently drops the
+   * mode and the column falls back to aliasing `updated_at`.
+   */
+  private preserveLmtFieldsMode(column: Column, incomingMeta: any) {
+    if (
+      column.uidt !== UITypes.LastModifiedTime &&
+      column.uidt !== UITypes.LastModifiedBy
+    ) {
+      return incomingMeta;
+    }
+    const incoming = parseProp(incomingMeta);
+    if (incoming && 'fields_mode' in incoming) return incomingMeta;
+    const storedMode = parseProp(column.meta)?.fields_mode;
+    if (!storedMode) return incomingMeta;
+    return { ...(incoming ?? {}), fields_mode: storedMode };
+  }
+
+  private async persistLmtTrackedSet(
+    context: NcContext,
+    columnId: string,
+    colBody: { meta?: any; tracked_field_ids?: unknown },
+  ) {
+    const incoming = parseProp(colBody.meta);
+    if (incoming?.fields_mode === 'specific') {
+      if (Array.isArray(colBody.tracked_field_ids)) {
+        await LmtTrackedField.set(
+          context,
+          columnId,
+          colBody.tracked_field_ids as string[],
+        );
+      }
+      return;
+    }
+    if (incoming && 'fields_mode' in incoming) {
+      await LmtTrackedField.deleteByColumnId(context, columnId);
+    }
+  }
+
   private async simpleColumnUpdate(
     context: NcContext,
     param: {
@@ -1722,26 +1775,16 @@ export class ColumnsService implements IColumnsService {
 
             await Column.updateMeta(context, {
               colId: param.columnId,
-              meta: colBody.meta,
+              meta: this.preserveLmtFieldsMode(column, colBody.meta),
             });
 
-            // Persist the tracked set only in 'specific' mode. `meta` is
-            // written wholesale, so any other incoming meta — including one
-            // that simply omits fields_mode — means the column no longer
-            // tracks specific fields: drop the rows so they can't leak, or
-            // resurrect on a later tracked-column delete once
-            // isFieldTrackingLmtCol is false.
-            if (parseProp(colBody.meta)?.fields_mode === 'specific') {
-              if (Array.isArray(colBody.tracked_field_ids)) {
-                await LmtTrackedField.set(
-                  context,
-                  param.columnId,
-                  colBody.tracked_field_ids,
-                );
-              }
-            } else {
-              await LmtTrackedField.deleteByColumnId(context, param.columnId);
-            }
+            // Persist the tracked set only when the incoming meta actually
+            // expresses a mode. `meta` is written wholesale, but not every
+            // caller authors it: a V3/MCP rename goes through a builder that
+            // emits `meta: {}` unconditionally, and treating that as "no longer
+            // specific" would delete the junction rows and silently revert the
+            // column to updated_at — the exact leak degrade-to-NULL prevents.
+            await this.persistLmtTrackedSet(context, param.columnId, colBody);
           }
 
           if (
@@ -2069,26 +2112,15 @@ export class ColumnsService implements IColumnsService {
       await Column.update(context, param.columnId, {
         ...column,
         title: colBody.title,
-        ...('meta' in colBody ? { meta: colBody.meta } : {}),
+        ...('meta' in colBody
+          ? { meta: this.preserveLmtFieldsMode(column, colBody.meta) }
+          : {}),
       });
 
-      // Persist the tracked set only in 'specific' mode. Scoped to writes that
-      // carry `meta` (it is replaced wholesale) — a title-only update must
-      // leave the tracked set alone. Any other incoming meta, including one
-      // that simply omits fields_mode, drops the rows so they can't leak or
-      // resurrect on a later delete.
+      // see persistLmtTrackedSet — a title-only update, and a V3/MCP rename
+      // whose builder emits an empty `meta`, must both leave the set alone
       if ('meta' in colBody) {
-        if (parseProp(colBody.meta)?.fields_mode === 'specific') {
-          if (Array.isArray(colBody.tracked_field_ids)) {
-            await LmtTrackedField.set(
-              context,
-              param.columnId,
-              colBody.tracked_field_ids,
-            );
-          }
-        } else {
-          await LmtTrackedField.deleteByColumnId(context, param.columnId);
-        }
+        await this.persistLmtTrackedSet(context, param.columnId, colBody);
       }
     } else if (
       [UITypes.SingleSelect, UITypes.MultiSelect].includes(colBody.uidt)
@@ -5916,9 +5948,14 @@ export class ColumnsService implements IColumnsService {
 
     // junction rows referencing the deleted column as a *tracked* field are
     // cleaned by ColumnDeleteLmtTrackedDependencyHandler (COLUMN_DELETED
-    // meta event below); here only drop the rows owned by the deleted
-    // column itself when it is a field-tracking LMT/LMB column
-    if (isFieldTrackingLmtCol(column) || isFieldTrackingLmbCol(column)) {
+    // meta event below); here drop the rows owned by the deleted column
+    // itself. Keyed on uidt rather than isFieldTrackingLmtCol: a meta rewrite
+    // that drops fields_mode leaves the rows in place (see
+    // persistLmtTrackedSet), and those still have to be cleaned up here.
+    if (
+      column.uidt === UITypes.LastModifiedTime ||
+      column.uidt === UITypes.LastModifiedBy
+    ) {
       await LmtTrackedField.deleteByColumnId(context, column.id, ncMeta);
     }
 

@@ -51,7 +51,6 @@ import { NcBaseErrorv2, NcError } from '~/helpers/catchError';
 import { BaseUser, ButtonColumn, View } from '~/models';
 import FormulaColumn from '~/models/FormulaColumn';
 import LmtTrackedField from '~/models/LmtTrackedField';
-import { CacheScope } from '~/utils/globals';
 import { TelemetryHandlerService } from '~/services/telemetry-handler.service';
 import { getRelatedModelMap } from '~/utils/getRelatedModelMap';
 

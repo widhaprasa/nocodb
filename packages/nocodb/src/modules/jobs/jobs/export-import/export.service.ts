@@ -3,9 +3,9 @@ import { Injectable } from '@nestjs/common';
 import debug from 'debug';
 import {
   getFirstNonPersonalView,
+  isAllowedLmtTrackedField,
   isCrossBaseLink,
   isLinksOrLTAR,
-  isAllowedLmtTrackedField,
   isMMOrMMLike,
   isSystemColumn,
   isVirtualCol,

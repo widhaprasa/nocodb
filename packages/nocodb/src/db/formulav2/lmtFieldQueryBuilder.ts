@@ -61,7 +61,16 @@ export async function lmtFieldQueryBuilder({
 
   const synthetic = getLmtSyntheticFormula(trackedIds, columns);
   if (!synthetic) {
-    return { builder: baseModel.dbDriver.raw('NULL') };
+    // typed, not a bare NULL: consumers splice this into positions where pg
+    // rejects an untyped constant at parse time — `ORDER BY NULL` ("non-integer
+    // constant in ORDER BY"), `GROUP BY NULL`, and `date_trunc('minute', NULL)`
+    // ("function date_trunc(unknown, unknown) is not unique"). Typing it here
+    // covers every consumer; the select path's TO_CHAR cast is unaffected.
+    return {
+      builder: baseModel.dbDriver.raw(
+        baseModel.isPg ? 'NULL::timestamp' : 'NULL',
+      ),
+    };
   }
 
   return formulaQueryBuilderv2({

@@ -45,6 +45,7 @@ import {
   Comment,
   Hook,
   LinkToAnotherRecordColumn,
+  LmtTrackedField,
   Model,
   Source,
   View,
@@ -1670,7 +1671,31 @@ export class ImportService {
         col.uidt === UITypes.CreatedBy ||
         col.uidt === UITypes.LastModifiedBy
       ) {
-        if (col.system) continue;
+        if (col.system) {
+          // A *system* LMT/LMB column can also track specific fields, and the
+          // duplicate carries its `meta` across — but the target column already
+          // exists, so none of the columnAdd path below runs and the junction
+          // rows never get written. Without this the copy sits in 'specific'
+          // mode with an empty set and reads NULL on every row while the source
+          // shows timestamps. Persist the remapped set onto the mapped column.
+          const targetColId = getIdOrExternalId(col.id);
+          if (
+            targetColId &&
+            parseProp(flatCol.meta)?.fields_mode === 'specific'
+          ) {
+            const trackedIds = ((col as any).tracked_field_ids || [])
+              .map((a: string) => getIdOrExternalId(a))
+              .filter(Boolean);
+            if (trackedIds.length) {
+              await LmtTrackedField.set(targetContext, targetColId, trackedIds);
+            } else {
+              this.logger.warn(
+                `system LMT/LMB column "${flatCol.title}" imported with an empty tracked set: none of its tracked fields were included in the import`,
+              );
+            }
+          }
+          continue;
+        }
 
         // remap the tracked field ids of a field-tracking LMT/LMB column
         // (exported top-level, persisted as junction rows by columnAdd);

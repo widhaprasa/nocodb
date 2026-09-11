@@ -317,7 +317,7 @@ export class DateTimeGeneralHandler extends GenericFieldHandler {
     // a LastModifiedTime column tracking specific fields has no physical
     // column — sort on its synthetic formula expression
     if (isFieldTrackingLmtCol(column)) {
-      const { alias, nulls, baseModel, context } = options;
+      const { alias, nulls, baseModel } = options;
       const builder = (
         await lmtFieldQueryBuilder({
           baseModel,
