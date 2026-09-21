@@ -588,6 +588,13 @@ export default class User implements UserType {
     await this.clearCache(userId, ncMeta);
   }
 
+  // Called from auth-resolution paths only (not getWithRoles, whose callers
+  // resolve target users). Never echoes blocked_reason to the subject.
+  static assertNotBlocked(user: { blocked?: boolean }): void {
+    if (!user?.blocked) return;
+    NcError.unauthorized('User is blocked. Please contact administrator.');
+  }
+
   static async getWithRoles(
     context: NcContext,
     userId: string,

@@ -7285,6 +7285,8 @@ export type IdOrNullType = IdType | null;
 export interface TableType {
   /** Unique Source ID */
   source_id?: string;
+  /** ID of the base-level section this table is grouped under, if any */
+  fk_base_section_id?: string | null;
   /** Date dependency rule for this table */
   date_dependency?: DateDependencyType | null;
   /** The columns included in this table */
@@ -7375,6 +7377,10 @@ export interface UserType {
   roles?: string;
   /** Set to true if the user's email has been verified. */
   email_verified: boolean;
+  /** Set to true when the user has been blocked by an administrator. */
+  blocked?: boolean;
+  /** Operator-facing reason a user was blocked. Never echoed to the blocked user. */
+  blocked_reason?: string;
   /**
    * The date that the user was created.
    * @format date
@@ -7872,8 +7878,8 @@ export interface UserCommentNotificationPreferenceType {
    * @example mod0Adp9PMG9o7uJy
    */
   fk_model_id?: IdType;
-  /** Is Read */
-  preference?: 'ALL_COMMENTS' | 'ONLY_MENTIONS';
+  /** Comment notification preference for the record */
+  preferences?: 'all' | 'mentions';
   /** Created At */
   created_at?: string;
   /** Updated At */
@@ -8028,6 +8034,8 @@ export interface ScriptType {
   config?: object;
   /** Order of the Script */
   order?: number;
+  /** ID of the automation folder this script is grouped under, if any */
+  fk_automation_section_id?: string | null;
   /** Base ID */
   base_id?: IdType;
   /** Workspace ID */
@@ -8073,6 +8081,8 @@ export interface WorkflowType {
   };
   /** The order of the workflow in the list */
   order?: number;
+  /** ID of the automation folder this workflow is grouped under, if any */
+  fk_automation_section_id?: string | null;
   /** Last updated time */
   updated_at?: string;
   /** Creation time */
@@ -18610,6 +18620,8 @@ export class Api<
         extensionId?: string;
         /** Team ID */
         teamId?: string;
+        /** User ID */
+        userId?: string;
         /** Client ID */
         clientId?: string;
         /** Token ID */
@@ -18715,6 +18727,8 @@ export class Api<
         extensionId?: string;
         /** Team ID */
         teamId?: string;
+        /** User ID */
+        userId?: string;
         /** Client ID */
         clientId?: string;
         /** Token ID */

@@ -11,6 +11,7 @@ import { BaseViewStrategy } from '~/strategies/base-view.strategy/base-view.stra
 import { GoogleStrategyProvider } from '~/strategies/google.strategy/google.strategy';
 import { AuthService } from '~/modules/auth/auth.service';
 import { AuthController } from '~/modules/auth/auth.controller';
+import { LdapService } from '~/services/ldap/ldap.service';
 
 export const authModuleMetadata = {
   imports: [PassportModule, NocoModule],
@@ -19,6 +20,7 @@ export const authModuleMetadata = {
   ],
   providers: [
     AuthService,
+    LdapService,
     LocalStrategy,
     AuthTokenStrategy,
     OAuthTokenStrategy,

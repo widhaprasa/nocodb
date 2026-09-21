@@ -21,6 +21,7 @@
   "license": "Sustainable Use License",
   "scripts": {
     "registerIntegrations": "node build-utils/registerIntegrations.js",
+    "build:docker": "rspack --config rspack.docker.config.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "pnpm run watch:run",
     "lint": "eslint \"src/**/*.ts\" --fix",
@@ -137,6 +138,7 @@
     "jsonfile": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
     "knex": "3.1.0",
+    "ldapjs": "^3.0.7",
     "list-github-dir-content": "^3.0.0",
     "lodash": "^4.17.23",
     "mailersend": "^1.5.0",
@@ -215,6 +217,7 @@
     "@types/ejs": "^3.1.5",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.14",
+    "@types/ldapjs": "^3.0.6",
     "@types/mocha": "^10.0.10",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.15.21",
@@ -255,7 +258,8 @@
     "onlyBuiltDependencies": [
       "sqlite3",
       "sharp",
-      "esbuild"
+      "esbuild",
+      "lz4"
     ]
   }
 }

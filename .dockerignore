@@ -1,0 +1,37 @@
+# Git / VCS
+.git
+.gitignore
+.gitmodules
+.github
+
+# Docs
+docs
+markdown
+*.md
+LICENSE.md
+SECURITY.md
+
+# Node / build artifacts (rebuilt inside the image)
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+.nuxt
+.output
+coverage
+**/.cache
+
+# Tooling / editor
+.vscode
+.idea
+.run
+*.log
+.DS_Store
+
+# Tests (not needed for the image)
+**/*.spec.ts
+**/*.e2e-spec.ts
+**/test
+packages/nocodb/test

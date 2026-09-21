@@ -461,6 +461,7 @@ export class UtilsService {
       githubAuthEnabled: !!(
         process.env.NC_GITHUB_CLIENT_ID && process.env.NC_GITHUB_CLIENT_SECRET
       ),
+      ldapAuthEnabled: !!process.env.NC_LDAP_URL,
       oidcAuthEnabled,
       oidcProviderName,
       oneClick: !!process.env.NC_ONE_CLICK,

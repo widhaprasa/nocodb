@@ -26,7 +26,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     if (this.config.get('auth.disableEmailAuth', { infer: true }))
       NcError.forbidden('Not available');
 
-    const user = await this.authService.validateUser(username, password);
+    const user = await this.authService.validateUser(username, password, req);
 
     if (!user) {
       this.appHooksService.emit(AppEvents.USER_SIGNIN_FAILED, {

@@ -702,6 +702,7 @@ export class McpService {
               .describe('Array of records with ID and fields to update'),
           },
           annotations: {
+            readOnlyHint: false,
             destructiveHint: true,
             openWorldHint: false,
           },
@@ -738,6 +739,7 @@ export class McpService {
           title: 'Delete Records',
           description: 'Delete records in a table',
           annotations: {
+            readOnlyHint: false,
             destructiveHint: true,
             openWorldHint: false,
           },

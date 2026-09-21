@@ -1,5 +1,5 @@
 import { extractFilterFromXwhere } from 'nocodb-sdk';
-import type { Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import type { Knex } from 'knex';
 import type { NcContext } from '~/interface/config';
 import type { BulkAggregateCtx, DBQueryClient } from '~/dbQueryClient/types';
@@ -9,7 +9,6 @@ import { Filter, Model } from '~/models';
 import { parseFilterArrJson } from '~/helpers/filterArrJsonHelper';
 import NcConnectionMgrv2 from '~/utils/common/NcConnectionMgrv2';
 import { resolveAggregateColumns } from '~/dbQueryClient/cross-db-utils/aggregate';
-import { NC_DISABLE_BULK_AGG_CONSOLIDATION } from '~/utils/nc-config';
 import { NcError } from '~/helpers/ncError';
 import { defaultGroupByLimitConfig } from '~/helpers/extractLimitAndOffset';
 
